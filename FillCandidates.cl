@@ -1,3 +1,4 @@
+#include "KernelDefinitions.h"
 
 __kernel void clFillCandidates(__global struct Track* const dev_tracks, __global const char* const dev_input,
   __global int* const dev_tracks_to_follow, __global bool* const dev_hit_used,

@@ -1,3 +1,4 @@
+#include "KernelDefinitions.h"
 
 void trackCreation(
 #if USE_SHARED_FOR_HITS

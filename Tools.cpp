@@ -244,16 +244,16 @@ switch(error){
 void clChoosePlatform(cl_device_id*& devices, cl_platform_id& platform) {
   // Choose the first available platform
   cl_platform_id* clPlatformIDs;
-  cl_uint numPlatforms;
-  clCheck(clGetPlatformIDs(0, NULL, &numPlatforms));
-  if(numPlatforms > 0)
-  {
-    cl_platform_id* platforms = (cl_platform_id*) malloc(numPlatforms * sizeof(cl_platform_id));
-    clCheck(clGetPlatformIDs(numPlatforms, platforms, NULL));
-    platform = platforms[0];
-    free(platforms);
-  }
-
+  // cl_uint numPlatforms;
+  // clCheck(clGetPlatformIDs(0, NULL, &numPlatforms));
+  // if(numPlatforms > 0)
+  // {
+  //   cl_platform_id* platforms = (cl_platform_id*) malloc(numPlatforms * sizeof(cl_platform_id));
+  //   clCheck(clGetPlatformIDs(numPlatforms, platforms, NULL));
+  //   platform = platforms[0];
+  //   free(platforms);
+  // }
+  clGetPlatformIDs(1, &platform, NULL);
   // Choose a device from the platform according to DEVICE_PREFERENCE
   cl_uint numCpus = 0;
   cl_uint numGpus = 0;

@@ -16,7 +16,12 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include <CL/cl.h>
+//#include <CL/cl.h>
+// Altera changes
+#include "CL/opencl.h"
+#include "AOCL_Utils.h"
+#define AOCL_ALIGNMENT 64
+
 
 void getMaxNumberOfHits(char*& input, int& maxHits);
 void printOutSensorHits(int sensorNumber, int* prevs, int* nexts);

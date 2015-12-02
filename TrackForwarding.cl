@@ -1,3 +1,4 @@
+//#include "KernelDefinitions.h"
 
 float fitHitToTrack(const float tx, const float ty, const struct Hit* h0, const float h1_z, const struct Hit* h2) {
   // tolerances

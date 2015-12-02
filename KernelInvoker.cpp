@@ -1,5 +1,7 @@
 #include "KernelInvoker.h"
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
+#include "AOCL_Utils.h"
+#define AOCL_ALIGNMENT 64
 
 extern int*   h_no_sensors;
 extern int*   h_no_hits;
@@ -53,42 +55,67 @@ int invokeParallelSearch(
   // Step 4: Creating command queue associate with the context
   cl_command_queue commandQueue = clCreateCommandQueue(context, devices[DEVICE_NUMBER], CL_QUEUE_PROFILING_ENABLE, NULL);
 
-  // Step 5: Create program object
-  std::vector<std::string> source_files =
-    {"KernelDefinitions.h", "TrackForwarding.cl", "SearchByTriplets.cl", "FillCandidates.cl", "CloneKiller.cl"};
-  std::string source_str = "";
-  for (auto s : source_files) {
-    std::string temp_str;
-    clCheck(convertClToString(s.c_str(), temp_str));
-    source_str += temp_str;
-  }
-  const char* source = source_str.c_str();
-  size_t sourceSize[] = { source_str.size() };
-  cl_program program = clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
+  // Step 5: Create program object    --Altera changes
+  // std::vector<std::string> source_files =
+  //   {"KernelDefinitions.h", "TrackForwarding.cl", "SearchByTriplets.cl", "FillCandidates.cl", "CloneKiller.cl"};
+  // std::string source_str = "";
+  // for (auto s : source_files) {
+  //   std::string temp_str;
+  //   clCheck(convertClToString(s.c_str(), temp_str));
+  //   source_str += temp_str;
+  // }
+  // const char* source = source_str.c_str();
+  // size_t sourceSize[] = { source_str.size() };
+  // cl_program program = clCreateProgramWithSource(context, 1, &source, sourceSize, NULL);
+  std::string binary_file1 = aocl_utils::getBoardBinaryFile("FillCandidates", devices[DEVICE_NUMBER]);
+  printf("Using AOCX: %s\n\n", binary_file1.c_str());
+  cl_program program1 = aocl_utils::createProgramFromBinary(context, binary_file1.c_str(), &devices[DEVICE_NUMBER], 1);
+
+  std::string binary_file2 = aocl_utils::getBoardBinaryFile("SearchByTriplets", devices[DEVICE_NUMBER]);
+  printf("Using AOCX: %s\n\n", binary_file2.c_str());
+  cl_program program2 = aocl_utils::createProgramFromBinary(context, binary_file2.c_str(), &devices[DEVICE_NUMBER], 1);
   
+  std::string binary_file3 = aocl_utils::getBoardBinaryFile("TrackForwarding", devices[DEVICE_NUMBER]);
+  printf("Using AOCX: %s\n\n", binary_file3.c_str());
+  cl_program program3 = aocl_utils::createProgramFromBinary(context, binary_file3.c_str(), &devices[DEVICE_NUMBER], 1);
+
+  std::string binary_file4 = aocl_utils::getBoardBinaryFile("CloneKiller", devices[DEVICE_NUMBER]);
+  printf("Using AOCX: %s\n\n", binary_file4.c_str());
+  cl_program program4 = aocl_utils::createProgramFromBinary(context, binary_file4.c_str(), &devices[DEVICE_NUMBER], 1);
+
+
   // Step 6: Build program
   const char* buildOptions = "";
   // const char* buildOptions = "-cl-nv-maxrregcount=32";
   // const char* buildOptions = "-g -s /home/dcampora/nfs/projects/gpu/tf_opencl/KernelDefinitions.cl -s /home/dcampora/nfs/projects/gpu/tf_opencl/kernel_searchByTriplets.cl"; 
   // const char* buildOptions = "-g -s \"/home/dcampora/projects/gpu/cl_forward_one_event/cl/TrackForwarding.cl\"";
-  cl_int status = clBuildProgram(program, 1, devices, buildOptions, NULL, NULL);
+  // cl_int status = clBuildProgram(program, 1, devices, buildOptions, NULL, NULL);
 
-  if (status != CL_SUCCESS) {
-    std::cerr << "Error string: " << getErrorString(status) << std::endl;
+  // if (status != CL_SUCCESS) {
+  //   std::cerr << "Error string: " << getErrorString(status) << std::endl;
 
-    if (status == CL_BUILD_PROGRAM_FAILURE) {
-      size_t log_size;
-      clGetProgramBuildInfo(program, devices[DEVICE_NUMBER], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
-      char* log = (char *) malloc(log_size);
-      clGetProgramBuildInfo(program, devices[DEVICE_NUMBER], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-      std::cerr << "Build log: " << std::endl << log << std::endl;
-    }
+  //   if (status == CL_BUILD_PROGRAM_FAILURE) {
+  //     size_t log_size;
+  //     clGetProgramBuildInfo(program, devices[DEVICE_NUMBER], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+  //     char* log = (char *) malloc(log_size);
+  //     clGetProgramBuildInfo(program, devices[DEVICE_NUMBER], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+  //     std::cerr << "Build log: " << std::endl << log << std::endl;
+  //   }
 
-    exit(-1);
-  }
+  //   exit(-1);
+  // }
+  cl_int status;
+  clCheck(clBuildProgram(program1, 0, NULL, "", NULL, NULL));
+  //clCheck(status);//, "Failed to build program1");
+  clCheck(clBuildProgram(program2, 0, NULL, "", NULL, NULL));
+  //clCheck(status);//, "Failed to build program2");
+  clCheck(clBuildProgram(program3, 0, NULL, "", NULL, NULL));
+  //clCheck(status);//, "Failed to build program3");
+  clCheck(clBuildProgram(program4, 0, NULL, "", NULL, NULL));
+  //clCheck(status);//, "Failed to build program4");
 
-  size_t size;
-  clCheck(clGetProgramBuildInfo(program, devices[DEVICE_NUMBER], CL_PROGRAM_BUILD_LOG , 0, NULL, &size));
+  // size_t size;
+  // clCheck(clGetProgramBuildInfo(program, devices[DEVICE_NUMBER], CL_PROGRAM_BUILD_LOG , 0, NULL, &size));
 
   // Step 7: Memory
   
@@ -136,10 +163,15 @@ int invokeParallelSearch(
   acc_size += input[startingEvent]->size();
 
   // Step 8: Create kernel_searchByTriplets object
-  cl_kernel kernel_fillCandidates = clCreateKernel(program, "clFillCandidates", NULL);
-  cl_kernel kernel_searchByTriplets = clCreateKernel(program, "clSearchByTriplets", NULL);
-  cl_kernel kernel_trackForwarding = clCreateKernel(program, "clTrackForwarding", NULL);
-  cl_kernel kernel_cloneKiller = clCreateKernel(program, "clCloneKiller", NULL);
+  cl_kernel kernel_fillCandidates = clCreateKernel(program1, "clFillCandidates", &status);
+  printf("error:%i\n", status);
+  assert(status == CL_SUCCESS);
+  cl_kernel kernel_searchByTriplets = clCreateKernel(program2, "clSearchByTriplets", &status);
+  assert(status == CL_SUCCESS);
+  cl_kernel kernel_trackForwarding = clCreateKernel(program3, "clTrackForwarding", &status);
+  assert(status == CL_SUCCESS);
+  cl_kernel kernel_cloneKiller = clCreateKernel(program4, "clCloneKiller", &status);
+  assert(status == CL_SUCCESS);
 
   // Step 9: Sets kernel_searchByTriplets arguments 
   clCheck(clSetKernelArg(kernel_fillCandidates, 0, sizeof(cl_mem), (void *) &dev_tracks));
@@ -357,7 +389,10 @@ int invokeParallelSearch(
   clCheck(clReleaseKernel(kernel_trackForwarding));
   clCheck(clReleaseKernel(kernel_cloneKiller));
 
-  clCheck(clReleaseProgram(program));
+  clCheck(clReleaseProgram(program1));
+  clCheck(clReleaseProgram(program2));
+  clCheck(clReleaseProgram(program3));
+  clCheck(clReleaseProgram(program4));
   clCheck(clReleaseCommandQueue(commandQueue));
   clCheck(clReleaseContext(context));
 

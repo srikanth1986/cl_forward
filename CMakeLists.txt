@@ -16,8 +16,8 @@
 
 set( SAMPLE_NAME clpixel )
 set( SOURCE_FILES Tools.cpp Logger.cpp KernelInvoker.cpp
-GpuPixelSearchByTriplet.cpp IndependentEntrypoint.cpp )
-set( EXTRA_FILES FillCandidates.cl SearchByTriplets.cl TrackForwarding.cl CloneKiller.cl KernelDefinitions.h )
+GpuPixelSearchByTriplet.cpp IndependentEntrypoint.cpp AOCL_Utils.cpp)
+#set( EXTRA_FILES FillCandidates.cl SearchByTriplets.cl TrackForwarding.cl CloneKiller.cl KernelDefinitions.h )
 
 ############################################################################
 
@@ -77,7 +77,7 @@ if("${ACCELERATOR}" STREQUAL NVIDIA)
 else()
     find_path( OPENCL_INCLUDE_DIRS 
         NAMES OpenCL/cl.h CL/cl.h
-        HINTS ../../../../include/ $ENV{AMDAPPSDKROOT}/include/
+        HINTS ../../../../include/ $ENV{ALTERAOCLSDKROOT}/host/include/
     $ENV{NVIDIA_INSTALL_PATH}/include/
     )
 endif()
@@ -92,7 +92,7 @@ if("${ACCELERATOR}" STREQUAL NVIDIA)
 else()
     find_library( OPENCL_LIBRARIES
         NAMES OpenCL
-        HINTS ../../../../lib/ $ENV{AMDAPPSDKROOT}/lib
+        HINTS ../../../../lib/ $ENV{ALTERAOCLSDKROOT}/host/linux64/lib $ENV{ALTERAOCLSDKROOT}/board/nalla_pcie/linux64/lib
         PATH_SUFFIXES ${PLATFORM}${BITNESS} ${BITNESS_SUFFIX}
     )
 endif()
@@ -129,7 +129,7 @@ file(GLOB INCLUDE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp" "${CMAKE_CURRENT_SOU
 if("${ACCELERATOR}" STREQUAL NVIDIA)
     include_directories( ${OPENCL_INCLUDE_DIRS} ../../../../include/SDKUtil $ENV{NVIDIA_INSTALL_PATH}/include )
 else()
-    include_directories( ${OPENCL_INCLUDE_DIRS} ../../../../include/SDKUtil $ENV{AMDAPPSDKROOT}/include/SDKUtil )
+    include_directories( ${OPENCL_INCLUDE_DIRS} ../../../../include/SDKUtil $ENV{ALTERAOCLSDKROOT}/include/SDKUtil )
 endif()
 
 add_executable( ${SAMPLE_NAME} ${SOURCE_FILES} ${INCLUDE_FILES} ${EXTRA_FILES})
