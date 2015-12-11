@@ -164,7 +164,7 @@ int invokeParallelSearch(
 
   // Step 8: Create kernel_searchByTriplets object
   cl_kernel kernel_fillCandidates = clCreateKernel(program1, "clFillCandidates", &status);
-  printf("error:%i\n", status);
+  //printf("error:%i\n", status);
   assert(status == CL_SUCCESS);
   cl_kernel kernel_searchByTriplets = clCreateKernel(program2, "clSearchByTriplets", &status);
   assert(status == CL_SUCCESS);
